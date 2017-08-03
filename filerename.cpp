@@ -44,7 +44,11 @@ void FileRename::on_btn_old_clicked()
         path = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
     }
     QString dir = QFileDialog::getExistingDirectory(this, tr("文件目录"), path, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+    if(dir.isEmpty())
+        return;
+
     ui->lineEdit_old->setText(dir);
+    ui->tableWidget->clear();
 
     m_dir.setPath(dir);
     m_dir.setFilter(QDir::Files | QDir::NoSymLinks);
