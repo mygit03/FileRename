@@ -5,6 +5,8 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QStandardPaths>
+#include <QMessageBox>
+#include <QMimeData>
 #include <QDebug>
 
 FileRename::FileRename(QWidget *parent) :
@@ -13,8 +15,8 @@ FileRename::FileRename(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    setWindowTitle(tr("文件重命名"));
-    setWindowIcon(QIcon(":/image/video.png"));
+//    setWindowTitle(tr("文件重命名"));
+//    setWindowIcon(QIcon(":/image/video.png"));
 
     ui->tableWidget->setColumnCount(2);
     ui->tableWidget->setEditTriggers(QHeaderView::NoEditTriggers);
@@ -30,11 +32,47 @@ FileRename::FileRename(QWidget *parent) :
     ui->lineEdit_old->setReadOnly(true);
 
     connect(ui->btn_cancel, SIGNAL(clicked(bool)), this, SLOT(close()));
+
+    setAcceptDrops(true);
 }
 
 FileRename::~FileRename()
 {
     delete ui;
+}
+
+void FileRename::dragEnterEvent(QDragEnterEvent *event)
+{
+    qDebug() << "DragEnter!";
+    //如果为文件，则支持拖放
+    if (event->mimeData()->hasFormat("text/uri-list"))
+        event->acceptProposedAction();
+}
+
+void FileRename::dropEvent(QDropEvent *event)
+{
+    qDebug() << "Drop!";
+    //注意：这里如果有多文件存在，意思是用户一下子拖动了多个文件，而不是拖动一个目录
+    //如果想读取整个目录，则在不同的操作平台下，自己编写函数实现读取整个目录文件名
+    QList<QUrl> urls = event->mimeData()->urls();
+    if(urls.isEmpty())
+        return;
+
+    //往文本框中追加文件名
+    foreach(QUrl url, urls) {
+        m_fileName = url.toLocalFile();
+        if(!QFileInfo(m_fileName).isDir()){
+            QMessageBox::warning(this,tr("警告:"),tr("不是目录!"));
+            return;
+        }
+        ui->lineEdit_old->setText(m_fileName);
+        ui->lineEdit_new->setPlaceholderText(QFileInfo(m_fileName).fileName());
+    }
+}
+
+void FileRename::dragLeaveEvent(QDragLeaveEvent *event)
+{
+    qDebug() << "Drag Leave";
 }
 
 void FileRename::on_btn_old_clicked()
